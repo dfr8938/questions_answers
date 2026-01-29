@@ -59,7 +59,7 @@ function AdminPanel() {
         setCategoryStats(stats)
       } catch (error) {
         console.error('Ошибка при загрузке статистики:', error)
-        showNotification('Ошибка при загрузке статистики: ' + (error.response?.data?.message || error.message), 'error')
+        showNotification('Ошибка при загрузке статистики: ' + error.message, 'error')
       }
     }
 
@@ -82,7 +82,7 @@ function AdminPanel() {
             showNotification('Категория успешно создана!', 'success')
           } catch (error) {
             console.error('Ошибка при создании категории:', error)
-            showNotification('Ошибка при создании категории: ' + (error.response?.data?.message || error.message), 'error')
+            showNotification('Ошибка при создании категории: ' + error.message, 'error')
           }
         }
     
@@ -100,7 +100,7 @@ function AdminPanel() {
         showNotification('Категория успешно обновлена!', 'success')
       } catch (error) {
         console.error('Ошибка при обновлении категории:', error)
-        showNotification('Ошибка при обновлении категории: ' + (error.response?.data?.message || error.message), 'error')
+        showNotification('Ошибка при обновлении категории: ' + error.message, 'error')
       }
     }
     
@@ -111,7 +111,7 @@ function AdminPanel() {
         showNotification('Категория успешно удалена!', 'success')
       } catch (error) {
         console.error('Ошибка при удалении категории:', error)
-        showNotification('Ошибка при удалении категории: ' + (error.response?.data?.message || error.message), 'error')
+        showNotification('Ошибка при удалении категории: ' + error.message, 'error')
       }
     }
 
@@ -134,7 +134,7 @@ function AdminPanel() {
       }, 1500);
     } catch (error) {
       console.error('Ошибка при загрузке вопросов:', error)
-      showNotification('Ошибка при загрузке вопросов: ' + (error.response?.data?.message || error.message), 'error')
+      showNotification('Ошибка при загрузке вопросов: ' + error.message, 'error')
       setQuestions([]) // Устанавливаем пустой массив в случае ошибки
       setLoading(false)
     }
@@ -151,7 +151,7 @@ function AdminPanel() {
       showNotification('Вопрос успешно создан!', 'success')
     } catch (error) {
       console.error('Ошибка при создании вопроса:', error)
-      showNotification('Ошибка при создании вопроса: ' + (error.response?.data?.message || error.message), 'error')
+      showNotification('Ошибка при создании вопроса: ' + error.message, 'error')
     }
   }
 
@@ -165,7 +165,7 @@ function AdminPanel() {
       showNotification('Вопрос успешно обновлен!', 'success')
     } catch (error) {
       console.error('Ошибка при обновлении вопроса:', error)
-      showNotification('Ошибка при обновлении вопроса: ' + (error.response?.data?.message || error.message), 'error')
+      showNotification('Ошибка при обновлении вопроса: ' + error.message, 'error')
     }
   }
 
@@ -178,7 +178,7 @@ function AdminPanel() {
       showNotification('Вопрос успешно удален!', 'success')
     } catch (error) {
       console.error('Ошибка при удалении вопроса:', error)
-      showNotification('Ошибка при удалении вопроса: ' + (error.response?.data?.message || error.message), 'error')
+      showNotification('Ошибка при удалении вопроса: ' + error.message, 'error')
     }
   }
 

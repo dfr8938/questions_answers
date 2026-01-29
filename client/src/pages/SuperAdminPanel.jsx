@@ -30,7 +30,7 @@ function SuperAdminPanel() {
       }, 1500);
     } catch (error) {
       console.error('Ошибка при загрузке пользователей:', error)
-      showNotification('Ошибка при загрузке пользователей: ' + (error.response?.data?.message || error.message), 'error')
+      showNotification('Ошибка при загрузке пользователей: ' + error.message, 'error')
       setLoading(false)
     }
   }
@@ -44,7 +44,7 @@ function SuperAdminPanel() {
       showNotification('Роль пользователя успешно изменена!', 'success')
     } catch (error) {
       console.error('Ошибка при изменении роли пользователя:', error)
-      showNotification('Ошибка при изменении роли пользователя: ' + (error.response?.data?.message || error.message), 'error')
+      showNotification('Ошибка при изменении роли пользователя: ' + error.message, 'error')
     }
   }
 
@@ -55,7 +55,7 @@ function SuperAdminPanel() {
       showNotification('Пользователь успешно удален!', 'success')
     } catch (error) {
       console.error('Ошибка при удалении пользователя:', error)
-      showNotification('Ошибка при удалении пользователя: ' + (error.response?.data?.message || error.message), 'error')
+      showNotification('Ошибка при удалении пользователя: ' + error.message, 'error')
     }
   }
 
@@ -110,7 +110,7 @@ function SuperAdminPanel() {
       showNotification('Админ успешно создан!', 'success')
     } catch (error) {
       console.error('Ошибка при создании админа:', error)
-      showNotification('Ошибка при создании админа: ' + (error.response?.data?.message || error.message), 'error')
+      showNotification('Ошибка при создании админа: ' + error.message, 'error')
     }
   }
 

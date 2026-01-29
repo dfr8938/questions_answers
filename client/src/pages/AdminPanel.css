@@ -121,11 +121,18 @@
 
 /* Стили для пагинации */
 .pagination {
+  display: -webkit-box;
+  display: -ms-flexbox;
   display: flex;
+  -webkit-box-pack: center;
+  -ms-flex-pack: center;
   justify-content: center;
+  -webkit-box-align: center;
+  -ms-flex-align: center;
   align-items: center;
   margin-top: 30px;
   gap: 15px;
+  -ms-flex-wrap: wrap;
   flex-wrap: wrap;
 }
 
@@ -204,6 +211,79 @@
   .pagination-controls {
     order: -1;
     margin-bottom: 10px;
+  }
+}
+
+/* Дополнительная адаптивность для маленьких экранов */
+@media (max-width: 480px) {
+  .panel {
+    padding: 0.5rem;
+  }
+  
+  .admin-content {
+    gap: 0.5rem;
+  }
+  
+  .form-section {
+    padding: 0.75rem;
+  }
+  
+  .pagination-button {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.8rem;
+  }
+  
+  .page-input {
+    padding: 0.25rem;
+    font-size: 0.8rem;
+    width: 40px;
+  }
+}
+
+/* Адаптивность для больших экранов */
+@media (min-width: 1400px) {
+  .admin-content {
+    -ms-grid-columns: 1fr 3fr;
+    grid-template-columns: 1fr 3fr;
+  }
+}
+
+/* Кроссбраузерность */
+.admin-content {
+  display: -ms-grid;
+  display: grid;
+  -ms-grid-columns: 1fr 2fr;
+  grid-template-columns: 1fr 2fr;
+  gap: 2rem;
+}
+
+@media (max-width: 768px) {
+  .admin-content {
+    -ms-grid-columns: 1fr;
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+}
+
+@media (min-width: 1400px) {
+  .admin-content {
+    -ms-grid-columns: 1fr 3fr;
+    grid-template-columns: 1fr 3fr;
+  }
+}
+
+.category-grid {
+  display: -ms-grid;
+  display: grid;
+  -ms-grid-columns: (minmax(250px, 1fr))[auto-fill];
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 15px;
+}
+
+@media (max-width: 768px) {
+  .category-grid {
+    -ms-grid-columns: 1fr;
+    grid-template-columns: 1fr;
   }
 }
 

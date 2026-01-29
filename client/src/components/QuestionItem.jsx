@@ -2,6 +2,9 @@ import React from 'react'
 import './QuestionItem.css'
 
 function QuestionItem({ question, onEdit, onDelete }) {
+  // Получаем название категории из объекта categoryRef если он существует
+  const categoryName = question.categoryRef?.name || question.category;
+  
   return (
     <div className="question-item">
       <div className="question-content">
@@ -9,16 +12,19 @@ function QuestionItem({ question, onEdit, onDelete }) {
         <p>{question.answer}</p>
         <div className="question-meta">
           <span className="date">{new Date(question.createdAt).toLocaleDateString('ru-RU')}</span>
+          {categoryName && (
+            <span className="category">{categoryName}</span>
+          )}
         </div>
       </div>
       <div className="question-actions">
-        <button 
+        <button
           className="btn btn-edit"
           onClick={() => onEdit(question)}
         >
           Редактировать
         </button>
-        <button 
+        <button
           className="btn btn-danger"
           onClick={() => onDelete(question.id)}
         >

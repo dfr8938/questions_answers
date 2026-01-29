@@ -1,12 +1,15 @@
 import React, { useState, useEffect } from 'react'
 import QuestionCard from '../components/QuestionCard'
 import Notification from '../components/Notification'
+import CategoryList from '../components/CategoryList'
 import api from '../services/api'
 import './Home.css'
 
 function Home() {
   const [scrollProgress, setScrollProgress] = useState(0);
   const [questions, setQuestions] = useState([])
+  const [categories, setCategories] = useState([])
+  const [selectedCategory, setSelectedCategory] = useState(null)
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
@@ -18,6 +21,11 @@ function Home() {
 
   useEffect(() => {
     fetchQuestions()
+  }, [])
+  
+  // Загрузка категорий при монтировании компонента
+  useEffect(() => {
+    fetchCategories()
   }, [])
   
   // Эффект для отслеживания прокрутки
@@ -41,7 +49,7 @@ function Home() {
   // Эффект для загрузки вопросов при изменении параметров
   useEffect(() => {
     fetchQuestions()
-  }, [searchTerm, sortBy, sortOrder, currentPage])
+  }, [searchTerm, sortBy, sortOrder, currentPage, selectedCategory])
 
   const fetchQuestions = async () => {
     try {
@@ -52,7 +60,8 @@ function Home() {
           limit: 10,
           sortBy: sortBy,
           order: sortOrder,
-          type: activeFilter !== 'all' ? activeFilter : undefined
+          type: activeFilter !== 'all' ? activeFilter : undefined,
+          categoryId: selectedCategory ? selectedCategory.id : undefined
         }
       })
       setQuestions(response.data.questions)
@@ -63,10 +72,20 @@ function Home() {
       }, 1500);
     } catch (error) {
       console.error('Ошибка при загрузке вопросов:', error)
-      showNotification('Ошибка при загрузке вопросов: ' + (error.response?.data?.message || error.message), 'error')
+      showNotification('Ошибка при загрузке вопросов: ' + error.message, 'error')
       setLoading(false)
     }
   }
+
+  const fetchCategories = async () => {
+    try {
+      const response = await api.get('/categories');
+      setCategories(response.data);
+    } catch (error) {
+      console.error('Ошибка при загрузке категорий:', error);
+      showNotification('Ошибка при загрузке категорий: ' + error.message, 'error');
+    }
+  };
 
   const showNotification = (message, type) => {
     setNotification({ message, type })
@@ -168,50 +187,73 @@ function Home() {
         </button>
       </div>
       
-      <div className="card-container">
-        {questions.map(question => (
-          <QuestionCard key={question.id} question={question} />
-        ))}
-      </div>
-      {/* Пагинация */}
-      <div className="pagination">
-        <button
-          onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-          disabled={currentPage === 1}
-          className="pagination-button"
-          title="Предыдущая страница"
-        >
-          <i className="fas fa-chevron-left"></i>
-        </button>
+      <div className="home-content">
+        <div className="categories-sidebar">
+          <CategoryList
+            categories={categories}
+            selectedCategory={selectedCategory}
+            onSelectCategory={(category) => {
+              setSelectedCategory(category);
+              setCurrentPage(1); // Сброс на первую страницу при выборе категории
+            }}
+          />
+        </div>
         
-        {totalPages > 1 && (
-          <div className="page-input-container">
-            <label>Страница:</label>
-            <input
-              type="number"
-              min="1"
-              max={totalPages}
-              value={currentPage}
-              onChange={(e) => {
-                const page = parseInt(e.target.value);
-                if (page >= 1 && page <= totalPages) {
-                  setCurrentPage(page);
-                }
-              }}
-              className="page-input"
-            />
-            <span>из {totalPages}</span>
-          </div>
-        )}
-        
-        <button
-          onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-          disabled={currentPage === totalPages}
-          className="pagination-button"
-          title="Следующая страница"
-        >
-          <i className="fas fa-chevron-right"></i>
-        </button>
+        <div className="questions-content">
+          {questions.length === 0 ? (
+            <div className="no-questions-message">
+              <p>По выбранной категории вопросы отсутствуют.</p>
+            </div>
+          ) : (
+            <div className="card-container">
+              {questions.map(question => (
+                <QuestionCard key={question.id} question={question} />
+              ))}
+            </div>
+          )}
+          {/* Пагинация */}
+          {totalPages > 1 && (
+            <div className="pagination">
+              <button
+                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1}
+                className="pagination-button"
+                title="Предыдущая страница"
+              >
+                <i className="fas fa-chevron-left"></i>
+              </button>
+              
+              {totalPages > 1 && (
+                <div className="page-input-container">
+                  <label>Страница:</label>
+                  <input
+                    type="number"
+                    min="1"
+                    max={totalPages}
+                    value={currentPage}
+                    onChange={(e) => {
+                      const page = parseInt(e.target.value);
+                      if (page >= 1 && page <= totalPages) {
+                        setCurrentPage(page);
+                      }
+                    }}
+                    className="page-input"
+                  />
+                  <span>из {totalPages}</span>
+                </div>
+              )}
+              
+              <button
+                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                disabled={currentPage === totalPages}
+                className="pagination-button"
+                title="Следующая страница"
+              >
+                <i className="fas fa-chevron-right"></i>
+              </button>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   )

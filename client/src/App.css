@@ -248,6 +248,77 @@ body {
   }
 }
 
+/* Дополнительная адаптивность для маленьких экранов */
+@media (max-width: 480px) {
+  .main-content {
+    padding: 5px;
+  }
+  
+  .btn {
+    padding: 0.4rem 0.8rem;
+    font-size: 0.9rem;
+  }
+  
+  .form-group input,
+  .form-group textarea,
+  .form-group select {
+    padding: 0.5rem;
+    font-size: 0.9rem;
+  }
+}
+
+/* Адаптивность для больших экранов */
+@media (min-width: 1400px) {
+  .main-content {
+    max-width: 1400px;
+  }
+}
+
+/* Кроссбраузерность */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type="number"] {
+  -moz-appearance: textfield;
+}
+
+/* Дополнительные префиксы для кроссбраузерности */
+.btn,
+.form-group input,
+.form-group textarea,
+.form-group select {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+}
+
+/* Стили для скроллбара */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+/* Альтернативные стили скроллбара для Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #c1c1c1 #f1f1f1;
+}
+
 /* Кроссбраузерность */
 input[type="number"]::-webkit-outer-spin-button,
 input[type="number"]::-webkit-inner-spin-button {

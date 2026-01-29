@@ -39,6 +39,20 @@ input[type="number"] {
   }
 }
 
+/* Дополнительная адаптивность для маленьких экранов */
+@media (max-width: 480px) {
+  body {
+    font-size: 0.85rem;
+  }
+}
+
+/* Адаптивность для больших экранов */
+@media (min-width: 1400px) {
+  body {
+    font-size: 1.1rem;
+  }
+}
+
 /* Стили для скроллбара */
 ::-webkit-scrollbar {
   width: 8px;
@@ -55,4 +69,10 @@ input[type="number"] {
 
 ::-webkit-scrollbar-thumb:hover {
   background: #a8a8a8;
+}
+
+/* Альтернативные стили скроллбара для Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #c1c1c1 #f1f1f1;
 }

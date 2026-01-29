@@ -41,6 +41,16 @@
   margin-top: auto;
 }
 
+.category-tag {
+  background-color: #e9f5ff;
+  color: #007bff;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  margin-right: 10px;
+}
+
 @media (max-width: 768px) {
   .card {
     padding: 15px;
@@ -51,6 +61,65 @@
   }
   
   .card-footer {
+    flex-direction: column;
+    gap: 5px;
+  }
+}
+
+/* Дополнительная адаптивность для маленьких экранов */
+@media (max-width: 480px) {
+  .card {
+    padding: 10px;
+  }
+  
+  .card h3 {
+    font-size: 1rem;
+  }
+  
+  .card p {
+    font-size: 0.9rem;
+  }
+  
+  .card-footer {
+    font-size: 0.8rem;
+  }
+}
+
+/* Кроссбраузерность */
+.card {
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-orient: vertical;
+  -webkit-box-direction: normal;
+  -ms-flex-direction: column;
+  flex-direction: column;
+  height: 100%;
+}
+
+.card-footer {
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-pack: justify;
+  -ms-flex-pack: justify;
+  justify-content: space-between;
+  margin-top: 15px;
+  padding-top: 10px;
+  border-top: 1px solid #eee;
+  font-size: 0.85rem;
+  color: #999;
+  -webkit-box-flex: 0;
+  -ms-flex-negative: 0;
+  flex-shrink: 0;
+  margin-top: auto;
+}
+
+@media (max-width: 768px) {
+  .card-footer {
+    -webkit-box-orient: vertical;
+    -webkit-box-direction: normal;
+    -ms-flex-direction: column;
     flex-direction: column;
     gap: 5px;
   }

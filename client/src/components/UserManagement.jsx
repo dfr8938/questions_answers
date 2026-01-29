@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import Notification from './Notification'
+import api from '../services/api'
 import './UserManagement.css'
 
 function UserManagement({ users, onRoleChange, onDelete, onUpdateUsers }) {
@@ -40,12 +41,10 @@ function UserManagement({ users, onRoleChange, onDelete, onUpdateUsers }) {
     try {
           const response = await api.put(`/users/${editingUser}`, editForm)
 
-      if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.message || 'Ошибка при обновлении пользователя')
-      }
+      // Axios автоматически выбрасывает ошибку для статусов >= 400
+      // Поэтому дополнительная проверка response.ok не нужна
 
-      const updatedUser = await response.json()
+      const updatedUser = response.data
       
       // Обновляем пользователя в списке
       const updatedUsers = users.map(user =>
@@ -62,7 +61,7 @@ function UserManagement({ users, onRoleChange, onDelete, onUpdateUsers }) {
       showNotification('Пользователь успешно обновлен!', 'success')
     } catch (error) {
       console.error('Ошибка при обновлении пользователя:', error)
-            showNotification('Ошибка при обновлении пользователя: ' + (error.response?.data?.message || error.message), 'error')
+            showNotification('Ошибка при обновлении пользователя: ' + error.message, 'error')
     }
   }
 
