@@ -68,34 +68,50 @@
 - Просмотр истории действий админов
 - Экспорт логов действий в CSV
 
-## Установка и запуск
+## Быстрый старт
 
 ### Требования
 - Node.js (v14 или выше)
 - PostgreSQL (v12 или выше)
 - Yarn или npm
 
-### База данных
+### Установка
+
+1. Клонируйте репозиторий:
+   ```bash
+   git clone <repository-url>
+   cd med-qa-portal
+   ```
+
+2. Установите зависимости для бэкенда:
+   ```bash
+   cd server
+   yarn install
+   cd ..
+   ```
+
+3. Установите зависимости для фронтенда:
+   ```bash
+   cd client
+   yarn install
+   cd ..
+   ```
+
+### Настройка базы данных
+
 1. Создайте базу данных PostgreSQL
 2. Обновите файл `server/config/config.json` с вашими учетными данными
+3. Создайте таблицы в базе данных:
+   ```bash
+   cd server
+   yarn setup-db
+   cd ..
+   ```
 
-### Бэкенд
-```bash
-cd server
-yarn install
-yarn start
-```
+### Переменные окружения
 
-### Фронтенд
-```bash
-cd client
-yarn install
-yarn dev
-```
+Создайте файл `.env` в папке `server` со следующими переменными:
 
-## Переменные окружения
-
-### Бэкенд (.env файл в папке server)
 ```
 PORT=5000
 DB_USERNAME=your_db_username
@@ -103,6 +119,28 @@ DB_PASSWORD=your_db_password
 DB_NAME=your_db_name
 DB_HOST=localhost
 JWT_SECRET=your_jwt_secret_key
+```
+
+### Запуск приложения
+
+Для запуска всего приложения в режиме разработки выполните:
+
+```bash
+npm run dev
+```
+
+Эта команда запустит и фронтенд, и бэкенд одновременно.
+
+Для запуска только бэкенда:
+```bash
+cd server
+yarn dev
+```
+
+Для запуска только фронтенда:
+```bash
+cd client
+yarn dev
 ```
 
 ## Безопасность
