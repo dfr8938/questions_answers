@@ -14,10 +14,11 @@
     "dialect": "postgres"
   },
   "production": {
-    "username": "postgres",
-    "password": "postgres",
+    "username": "med_qa_user",
+    "password": "your_strong_db_password_here",
     "database": "med_qa_db",
-    "host": "127.0.0.1",
+    "host": "localhost",
+    "port": 5432,
     "dialect": "postgres"
   }
 }
