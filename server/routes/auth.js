@@ -7,7 +7,10 @@ const rateLimit = require('express-rate-limit')
 require('dotenv').config()
 
 
-// Регистрация пользователя
+/**
+ * Маршрут для регистрации нового пользователя
+ * Доступен без аутентификации
+ */
 router.post('/register', async (req, res) => {
   try {
     const { username, email, password } = req.body
@@ -67,7 +70,10 @@ router.post('/register', async (req, res) => {
 //   legacyHeaders: false,
 // })
 
-// Вход пользователя
+/**
+ * Маршрут для входа пользователя в систему
+ * Доступен без аутентификации
+ */
 router.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body
@@ -113,7 +119,10 @@ router.post('/login', async (req, res) => {
   }
 })
 
-// Получение информации о текущем пользователе
+/**
+ * Маршрут для получения информации о текущем пользователе
+ * Доступен только для аутентифицированных пользователей
+ */
 router.get('/me', authenticateToken, async (req, res) => {
   res.json({
     id: req.user.id,

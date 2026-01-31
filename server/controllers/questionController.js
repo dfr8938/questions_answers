@@ -3,10 +3,20 @@ const { Op } = require('sequelize');
 const sequelize = require('../config/database');
 const NodeCache = require('node-cache');
 
-// Создаем экземпляр кэша с TTL 5 минут
+/**
+ * Экземпляр кэша для хранения результатов запросов
+ * Используется для уменьшения нагрузки на базу данных
+ * @type {NodeCache}
+ */
 const cache = new NodeCache({ stdTTL: 300 });
 
-// Получение всех вопросов (публичный маршрут) с кэшированием
+/**
+ * Контроллер для получения всех вопросов
+ * Поддерживает пагинацию, поиск, сортировку и фильтрацию по категориям
+ * Использует кэширование для повышения производительности
+ * @param {Object} req - Объект запроса Express
+ * @param {Object} res - Объект ответа Express
+ */
 const getAllQuestions = async (req, res) => {
   try {
     const { search, page = 1, limit = 10, sortBy = 'createdAt', order = 'DESC', categoryId } = req.query;
@@ -86,7 +96,8 @@ const getAllQuestions = async (req, res) => {
       currentPage: parseInt(page),
       totalQuestions: count,
       categoryStats,
-      dateStats
+      dateStats,
+      filteredQuestionsCount: rows.length
     };
     
     // Сохраняем результат в кэш
@@ -100,7 +111,12 @@ const getAllQuestions = async (req, res) => {
   }
 };
 
-// Создание нового вопроса (только для админов)
+/**
+ * Контроллер для создания нового вопроса
+ * Доступен только для администраторов
+ * @param {Object} req - Объект запроса Express
+ * @param {Object} res - Объект ответа Express
+ */
 const createQuestion = async (req, res) => {
   try {
     const { question, answer, categoryId } = req.body;
@@ -145,7 +161,12 @@ const createQuestion = async (req, res) => {
   }
 };
 
-// Обновление вопроса (только для админов)
+/**
+ * Контроллер для обновления вопроса
+ * Доступен только для администраторов
+ * @param {Object} req - Объект запроса Express
+ * @param {Object} res - Объект ответа Express
+ */
 const updateQuestion = async (req, res) => {
   try {
     const { id } = req.params;
@@ -200,7 +221,12 @@ const updateQuestion = async (req, res) => {
   }
 };
 
-// Удаление вопроса (только для админов)
+/**
+ * Контроллер для удаления вопроса
+ * Доступен только для администраторов
+ * @param {Object} req - Объект запроса Express
+ * @param {Object} res - Объект ответа Express
+ */
 const deleteQuestion = async (req, res) => {
   try {
     const { id } = req.params;
@@ -224,5 +250,6 @@ module.exports = {
   getAllQuestions,
   createQuestion,
   updateQuestion,
-  deleteQuestion
+  deleteQuestion,
+  cache
 };

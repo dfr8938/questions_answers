@@ -1,20 +1,32 @@
 import React, { useState, useEffect } from 'react'
-import './QuestionForm.css'
 
-function QuestionForm({ onSubmit, initialData, onCancel }) {
+/**
+ * Компонент формы для создания и редактирования вопросов
+ * @param {Function} onSubmit - Функция для отправки данных формы
+ * @param {Object} initialData - Начальные данные для редактирования вопроса
+ * @param {Function} onCancel - Функция для отмены редактирования
+ * @param {Array} availableCategories - Список доступных категорий
+ */
+function QuestionForm({ onSubmit, initialData, onCancel, availableCategories = [] }) {
+  // Состояние для хранения данных формы
   const [formData, setFormData] = useState({
     question: '',
     answer: '',
     category: ''
   })
+  
+  // Состояние для хранения ошибок валидации
   const [errors, setErrors] = useState({})
 
+  // Эффект для инициализации формы при изменении initialData
   useEffect(() => {
     if (initialData) {
+      // Преобразуем categoryId в category name для отображения в форме
+      const categoryName = initialData.categoryRef?.name || initialData.category || '';
       setFormData({
         question: initialData.question,
         answer: initialData.answer,
-        category: initialData.category
+        category: categoryName
       })
     } else {
       // Очищаем форму при отсутствии initialData (например, после создания)
@@ -26,6 +38,10 @@ function QuestionForm({ onSubmit, initialData, onCancel }) {
     }
   }, [initialData])
 
+  /**
+   * Обработчик изменения полей формы
+   * @param {Event} e - Событие изменения поля
+   */
   const handleChange = (e) => {
     setFormData({
       ...formData,
@@ -41,6 +57,10 @@ function QuestionForm({ onSubmit, initialData, onCancel }) {
     }
   }
 
+  /**
+   * Валидация формы перед отправкой
+   * @returns {Object} Объект с ошибками валидации
+   */
   const validateForm = () => {
     const newErrors = {}
     
@@ -55,6 +75,10 @@ function QuestionForm({ onSubmit, initialData, onCancel }) {
     return newErrors
   }
   
+  /**
+   * Обработчик отправки формы
+   * @param {Event} e - Событие отправки формы
+   */
   const handleSubmit = (e) => {
     e.preventDefault()
     
@@ -72,10 +96,18 @@ function QuestionForm({ onSubmit, initialData, onCancel }) {
       return
     }
     
+    // Преобразуем category name в categoryId для отправки на сервер
+    const selectedCategory = availableCategories.find(cat => cat.name === formData.category);
+    const submitData = {
+      question: formData.question,
+      answer: formData.answer,
+      categoryId: selectedCategory ? selectedCategory.id : null
+    };
+    
     if (initialData) {
-      onSubmit(initialData.id, formData)
+      onSubmit(initialData.id, submitData)
     } else {
-      onSubmit(formData)
+      onSubmit(submitData)
       // Очищаем форму после отправки
       setFormData({
         question: '',
@@ -123,27 +155,16 @@ function QuestionForm({ onSubmit, initialData, onCancel }) {
         <select
           id="category"
           name="category"
-          value={formData.category}
+          value={formData.category || ''}
           onChange={handleChange}
           autoComplete="off"
         >
           <option value="">Выберите категорию</option>
-          <option value="Кардиология">Кардиология</option>
-          <option value="Неврология">Неврология</option>
-          <option value="Гастроэнтерология">Гастроэнтерология</option>
-          <option value="Эндокринология">Эндокринология</option>
-          <option value="Пульмонология">Пульмонология</option>
-          <option value="Урология">Урология</option>
-          <option value="Гинекология">Гинекология</option>
-          <option value="Ортопедия">Ортопедия</option>
-          <option value="Офтальмология">Офтальмология</option>
-          <option value="Дерматология">Дерматология</option>
-          <option value="Психиатрия">Психиатрия</option>
-          <option value="Педиатрия">Педиатрия</option>
-          <option value="Терапия">Терапия</option>
-          <option value="Профилактика">Профилактика</option>
-          <option value="Диагностика">Диагностика</option>
-          <option value="Лечение">Лечение</option>
+          {availableCategories.map(category => (
+            <option key={category.id} value={category.name}>
+              {category.name}
+            </option>
+          ))}
         </select>
       </div>
       

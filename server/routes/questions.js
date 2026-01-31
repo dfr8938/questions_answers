@@ -8,16 +8,28 @@ const {
   deleteQuestion
 } = require('../controllers/questionController');
 
-// Получение всех вопросов (публичный маршрут)
+/**
+ * Маршрут для получения всех вопросов
+ * Доступен без аутентификации (публичный маршрут)
+ */
 router.get('/', getAllQuestions);
 
-// Создание нового вопроса (только для админов)
+/**
+ * Маршрут для создания нового вопроса
+ * Доступен только для администраторов
+ */
 router.post('/', authenticateToken, requireAdmin, createQuestion);
 
-// Обновление вопроса (только для админов)
+/**
+ * Маршрут для обновления вопроса
+ * Доступен только для администраторов
+ */
 router.put('/:id', authenticateToken, requireAdmin, updateQuestion);
 
-// Удаление вопроса (только для админов)
+/**
+ * Маршрут для удаления вопроса
+ * Доступен только для администраторов
+ */
 router.delete('/:id', authenticateToken, requireAdmin, deleteQuestion);
 
 module.exports = router;

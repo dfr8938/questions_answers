@@ -6,7 +6,10 @@ const bcrypt = require('bcryptjs')
 const { Op } = require('sequelize')
 
 
-// Получение всех пользователей (только для суперадминов)
+/**
+ * Маршрут для получения всех пользователей
+ * Доступен только для суперадминистраторов
+ */
 router.get('/', authenticateToken, requireSuperAdmin, async (req, res) => {
   try {
     const users = await User.findAll({
@@ -20,7 +23,10 @@ router.get('/', authenticateToken, requireSuperAdmin, async (req, res) => {
   }
 })
 
-// Создание нового админа (только для суперадминов)
+/**
+ * Маршрут для создания нового администратора
+ * Доступен только для суперадминистраторов
+ */
 router.post('/admin', authenticateToken, requireSuperAdmin, async (req, res) => {
   try {
     const { username, email, password } = req.body
@@ -63,7 +69,10 @@ router.post('/admin', authenticateToken, requireSuperAdmin, async (req, res) => 
   }
 })
 
-// Редактирование админа или суперадмина (только для суперадминов)
+/**
+ * Маршрут для редактирования администратора или суперадминистратора
+ * Доступен только для суперадминистраторов
+ */
 router.put('/:id', authenticateToken, requireSuperAdmin, async (req, res) => {
   try {
     const { id } = req.params
@@ -117,7 +126,10 @@ router.put('/:id', authenticateToken, requireSuperAdmin, async (req, res) => {
   }
 })
 
-// Изменение роли пользователя (только для суперадминов)
+/**
+ * Маршрут для изменения роли пользователя
+ * Доступен только для суперадминистраторов
+ */
 router.put('/:id/role', authenticateToken, requireSuperAdmin, async (req, res) => {
   try {
     const { id } = req.params
@@ -162,7 +174,11 @@ router.put('/:id/role', authenticateToken, requireSuperAdmin, async (req, res) =
     res.status(500).json({ message: 'Ошибка сервера' })
   }
 })
-// Удаление пользователя (только для суперадминов)
+
+/**
+ * Маршрут для удаления пользователя
+ * Доступен только для суперадминистраторов
+ */
 router.delete('/:id', authenticateToken, requireSuperAdmin, async (req, res) => {
   try {
     const { id } = req.params
@@ -175,7 +191,11 @@ router.delete('/:id', authenticateToken, requireSuperAdmin, async (req, res) => 
     
     // Предотвращаем удаление суперадмина
     const userToDelete = await User.findByPk(id)
-    if (userToDelete && userToDelete.isSuperAdmin()) {
+    if (!userToDelete) {
+      return res.status(404).json({ message: 'Пользователь не найден' })
+    }
+    
+    if (userToDelete.isSuperAdmin()) {
       return res.status(400).json({ message: 'Нельзя удалить суперадмина' })
     }
     

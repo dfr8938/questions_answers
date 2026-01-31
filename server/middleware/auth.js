@@ -2,7 +2,13 @@ const jwt = require('jsonwebtoken')
 const { User } = require('../models')
 require('dotenv').config()
 
-// Проверка токена аутентификации
+/**
+ * Middleware для проверки токена аутентификации JWT
+ * Извлекает токен из заголовка Authorization и проверяет его действительность
+ * @param {Object} req - Объект запроса Express
+ * @param {Object} res - Объект ответа Express
+ * @param {Function} next - Функция для перехода к следующему middleware
+ */
 const authenticateToken = async (req, res, next) => {
   try {
     const authHeader = req.headers['authorization']
@@ -29,7 +35,13 @@ const authenticateToken = async (req, res, next) => {
   }
 }
 
-// Проверка роли администратора
+/**
+ * Middleware для проверки роли администратора
+ * Проверяет, что пользователь имеет роль 'admin' или 'superadmin'
+ * @param {Object} req - Объект запроса Express
+ * @param {Object} res - Объект ответа Express
+ * @param {Function} next - Функция для перехода к следующему middleware
+ */
 const requireAdmin = (req, res, next) => {
   if (!req.user) {
     return res.status(401).json({ message: 'Требуется аутентификация' })
@@ -42,7 +54,13 @@ const requireAdmin = (req, res, next) => {
   next()
 }
 
-// Проверка роли суперадминистратора
+/**
+ * Middleware для проверки роли суперадминистратора
+ * Проверяет, что пользователь имеет роль 'superadmin'
+ * @param {Object} req - Объект запроса Express
+ * @param {Object} res - Объект ответа Express
+ * @param {Function} next - Функция для перехода к следующему middleware
+ */
 const requireSuperAdmin = (req, res, next) => {
   if (!req.user) {
     return res.status(401).json({ message: 'Требуется аутентификация' })

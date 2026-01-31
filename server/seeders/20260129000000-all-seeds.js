@@ -118,6 +118,17 @@ module.exports = {
     await queryInterface.bulkInsert('Categories', categories, {});
     console.log('Категории успешно созданы');
     
+    // Получаем ID созданных категорий
+    const createdCategories = await queryInterface.sequelize.query(
+      'SELECT id, name FROM "Categories"',
+      { type: queryInterface.sequelize.QueryTypes.SELECT }
+    );
+    
+    const categoryMap = {};
+    createdCategories.forEach(cat => {
+      categoryMap[cat.name] = cat.id;
+    });
+    
     // Создаем пользователей
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash('superadmin123', salt);
@@ -211,21 +222,21 @@ module.exports = {
       {
         question: 'Как часто нужно проходить медицинский осмотр?',
         answer: 'Медицинский осмотр рекомендуется проходить ежегодно для взрослых и раз в полгода для пожилых людей.',
-        categoryId: 1, // Профилактика
+        categoryId: categoryMap['Профилактика'], // Используем ID из categoryMap
         createdAt: new Date(),
         updatedAt: new Date()
       },
       {
         question: 'Какие вакцины необходимы взрослым?',
         answer: 'Взрослым рекомендуются вакцины против гриппа, столбняка, дифтерии, пневмококковой инфекции и других заболеваний в зависимости от возраста и состояния здоровья.',
-        categoryId: 2, // Вакцинация
+        categoryId: categoryMap['Вакцинация'], // Используем ID из categoryMap
         createdAt: new Date(),
         updatedAt: new Date()
       },
       {
         question: 'Как правильно питаться для поддержания здоровья?',
         answer: 'Правильное питание включает употребление овощей, фруктов, цельнозерновых продуктов, нежирных белков и ограничение сахара, соли и насыщенных жиров.',
-        categoryId: 3, // Питание
+        categoryId: categoryMap['Питание'], // Используем ID из categoryMap
         createdAt: new Date(),
         updatedAt: new Date()
       }
@@ -236,70 +247,70 @@ module.exports = {
       {
         question: 'Какие меры предосторожности следует соблюдать при контакте с больным гриппом?',
         answer: 'Следует избегать близкого контакта с больным, часто мыть руки, использовать медицинскую маску и регулярно проветривать помещение.',
-        categoryId: 4, // Инфекционные болезни
+        categoryId: categoryMap['Инфекционные болезни'], // Используем ID из categoryMap
         createdAt: new Date('2026-01-14'),
         updatedAt: new Date('2026-01-14')
       },
       {
         question: 'Как правильно измерять артериальное давление в домашних условиях?',
         answer: 'Измерять давление следует в спокойной обстановке, сидя, после 5-минутного отдыха. Рука должна быть на уровне сердца, манжета плотно прилегать к плечу.',
-        categoryId: 5, // Кардиология
+        categoryId: categoryMap['Кардиология'], // Используем ID из categoryMap
         createdAt: new Date('2026-01-14'),
         updatedAt: new Date('2026-01-14')
       },
       {
         question: 'Какие продукты следует исключить из рациона при повышенном уровне холестерина?',
         answer: 'Следует ограничить потребление жирного мяса, яиц, сливочного масла, маргарина, фастфуда и продуктов с высоким содержанием насыщенных жиров.',
-        categoryId: 3, // Питание
+        categoryId: categoryMap['Питание'], // Используем ID из categoryMap
         createdAt: new Date('2026-01-14'),
         updatedAt: new Date('2026-01-14')
       },
       {
         question: 'Какие упражнения рекомендуются при остеохондрозе шейного отдела позвоночника?',
         answer: 'Рекомендуются плавание, йога, лечебная физкультура, упражнения на растяжку шеи и плечевого пояса, а также изометрические упражнения.',
-        categoryId: 6, // Ортопедия
+        categoryId: categoryMap['Ортопедия'], // Используем ID из categoryMap
         createdAt: new Date('2026-01-14'),
         updatedAt: new Date('2026-01-14')
       },
       {
         question: 'Как часто следует проходить маммографию женщинам после 40 лет?',
         answer: 'Женщинам после 40 лет рекомендуется проходить маммографию ежегодно для раннего выявления рака молочной железы.',
-        categoryId: 7, // Онкология
+        categoryId: categoryMap['Онкология'], // Используем ID из categoryMap
         createdAt: new Date('2026-01-14'),
         updatedAt: new Date('2026-01-14')
       },
       {
         question: 'Какие симптомы указывают на развитие анемии?',
         answer: 'Основные симптомы анемии включают слабость, головокружение, бледность кожи, одышку и учащенное сердцебиение.',
-        categoryId: 1, // Профилактика
+        categoryId: categoryMap['Профилактика'], // Используем ID из categoryMap
         createdAt: new Date('2026-01-10'),
         updatedAt: new Date('2026-01-10')
       },
       {
         question: 'Какова рекомендуемая дозировка витамина D для взрослых?',
         answer: 'Рекомендуемая дозировка витамина D для взрослых составляет 600-800 МЕ в сутки, при дефиците может потребоваться более высокая доза по назначению врача.',
-        categoryId: 2, // Вакцинация
+        categoryId: categoryMap['Вакцинация'], // Используем ID из categoryMap
         createdAt: new Date('2026-01-05'),
         updatedAt: new Date('2026-01-05')
       },
       {
         question: 'Какие осложнения могут возникнуть при нелеченом диабете?',
         answer: 'При нелеченом диабете могут развиться осложнения, такие как диабетическая кома, поражение почек, глаз, нервов и сердечно-сосудистой системы.',
-        categoryId: 3, // Питание
+        categoryId: categoryMap['Питание'], // Используем ID из categoryMap
         createdAt: new Date('2026-01-01'),
         updatedAt: new Date('2026-01-01')
       },
       {
         question: 'Какие меры профилактики простудных заболеваний наиболее эффективны зимой?',
         answer: 'Эффективные меры профилактики включают закаливание, регулярное проветривание помещений, увлажнение воздуха, прием витаминов и избегание переохлаждения.',
-        categoryId: 4, // Инфекционные болезни
+        categoryId: categoryMap['Инфекционные болезни'], // Используем ID из categoryMap
         createdAt: new Date('2025-12-20'),
         updatedAt: new Date('2025-12-20')
       },
       {
         question: 'Как часто следует посещать стоматолога для профилактического осмотра?',
         answer: 'Рекомендуется посещать стоматолога для профилактического осмотра не реже 2 раз в год, при наличии проблем - по назначению врача.',
-        categoryId: 1, // Профилактика
+        categoryId: categoryMap['Профилактика'], // Используем ID из categoryMap
         createdAt: new Date('2025-12-15'),
         updatedAt: new Date('2025-12-15')
       }
@@ -310,8 +321,9 @@ module.exports = {
     // Генерируем 50 дополнительных карточек
     for (let i = 0; i < 50; i++) {
       const topicIndex = Math.floor(Math.random() * topics.length);
-      // Генерируем categoryId в диапазоне от 1 до 14 (количество категорий)
-      const categoryIndex = Math.floor(Math.random() * 14) + 1;
+      // Используем categoryMap для получения правильного categoryId
+      const categoryName = Object.keys(categoryMap)[Math.floor(Math.random() * Object.keys(categoryMap).length)];
+      const categoryId = categoryMap[categoryName];
       const questionTemplateIndex = Math.floor(Math.random() * questionTemplates.length);
       const answerTemplateIndex = Math.floor(Math.random() * answerTemplates.length);
       const periodIndex = Math.floor(Math.random() * periods.length);
@@ -359,7 +371,7 @@ module.exports = {
       questions.push({
         question,
         answer,
-        categoryId: categoryIndex,
+        categoryId: categoryId,
         createdAt: new Date(Date.now() - Math.floor(Math.random() * 30) * 24 * 60 * 60 * 1000), // Случайная дата в пределах последних 30 дней
         updatedAt: new Date()
       });

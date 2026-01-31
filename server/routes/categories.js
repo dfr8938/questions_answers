@@ -1,10 +1,13 @@
 const express = require('express');
 const router = express.Router();
-const { Category } = require('../models');
+const { Category, Question } = require('../models');
 const { Op } = require('sequelize');
 const { authenticateToken, requireAdmin } = require('../middleware/auth');
 
-// Получение всех категорий (публичный маршрут)
+/**
+ * Маршрут для получения всех категорий
+ * Доступен без аутентификации (публичный маршрут)
+ */
 router.get('/', async (req, res) => {
   try {
     const categories = await Category.findAll({
@@ -17,7 +20,37 @@ router.get('/', async (req, res) => {
   }
 });
 
-// Создание новой категории (только для админов)
+/**
+ * Маршрут для получения всех вопросов в категории
+ * Доступен только для администраторов
+ */
+router.get('/:id/questions', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    // Проверяем существование категории
+    const category = await Category.findByPk(id);
+    if (!category) {
+      return res.status(404).json({ message: 'Категория не найдена' });
+    }
+    
+    // Получаем все вопросы в категории
+    const questions = await Question.findAll({
+      where: { categoryId: id },
+      order: [['createdAt', 'DESC']]
+    });
+    
+    res.json(questions);
+  } catch (error) {
+    console.error('Ошибка при получении вопросов категории:', error);
+    res.status(500).json({ message: 'Ошибка сервера' });
+  }
+});
+
+/**
+ * Маршрут для создания новой категории
+ * Доступен только для администраторов
+ */
 router.post('/', authenticateToken, requireAdmin, async (req, res) => {
   try {
     const { name, description } = req.body;
@@ -44,7 +77,10 @@ router.post('/', authenticateToken, requireAdmin, async (req, res) => {
   }
 });
 
-// Обновление категории (только для админов)
+/**
+ * Маршрут для обновления категории
+ * Доступен только для администраторов
+ */
 router.put('/:id', authenticateToken, requireAdmin, async (req, res) => {
   try {
     const { id } = req.params;
@@ -52,11 +88,11 @@ router.put('/:id', authenticateToken, requireAdmin, async (req, res) => {
     
     // Проверка существующей категории с таким именем (исключая текущую)
     if (name) {
-      const existingCategory = await Category.findOne({ 
-        where: { 
+      const existingCategory = await Category.findOne({
+        where: {
           name,
           id: { [Op.ne]: id }
-        } 
+        }
       });
       if (existingCategory) {
         return res.status(400).json({ message: 'Категория с таким названием уже существует' });
@@ -83,28 +119,63 @@ router.put('/:id', authenticateToken, requireAdmin, async (req, res) => {
   }
 });
 
-// Удаление категории (только для админов)
+/**
+ * Маршрут для удаления всех вопросов в категории
+ * Доступен только для администраторов
+ */
+router.delete('/:id/questions', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    // Проверяем существование категории
+    const category = await Category.findByPk(id);
+    if (!category) {
+      return res.status(404).json({ message: 'Категория не найдена' });
+    }
+    
+    // Удаляем все вопросы в категории
+    const deletedCount = await Question.destroy({ where: { categoryId: id } });
+    
+    // Очищаем кэш после удаления вопросов
+    const { cache } = require('../controllers/questionController');
+    if (cache) {
+      cache.flushAll();
+    }
+    
+    res.json({ message: `Удалено ${deletedCount} вопросов из категории` });
+  } catch (error) {
+    console.error('Ошибка при удалении вопросов категории:', error);
+    res.status(500).json({ message: 'Ошибка сервера' });
+  }
+});
+
+/**
+ * Маршрут для удаления категории
+ * Доступен только для администраторов
+ */
 router.delete('/:id', authenticateToken, requireAdmin, async (req, res) => {
   try {
     const { id } = req.params;
     
-    // Проверяем, есть ли вопросы в этой категории
-    const { Question } = require('../models');
-    const questionsCount = await Question.count({ where: { categoryId: id } });
-    
-    if (questionsCount > 0) {
-      return res.status(400).json({ 
-        message: `Невозможно удалить категорию, так как в ней содержится ${questionsCount} вопросов. Сначала удалите или переместите вопросы.` 
-      });
-    }
-    
-    const deleted = await Category.destroy({ where: { id } });
-    
-    if (deleted === 0) {
+    // Проверяем существование категории
+    const category = await Category.findByPk(id);
+    if (!category) {
       return res.status(404).json({ message: 'Категория не найдена' });
     }
     
-    res.json({ message: 'Категория успешно удалена' });
+    // Сначала удаляем все вопросы в категории
+    await Question.destroy({ where: { categoryId: id } });
+    
+    // Затем удаляем саму категорию
+    await Category.destroy({ where: { id } });
+    
+    res.json({ message: 'Категория и все вопросы в ней успешно удалены' });
+    
+    // Очищаем кэш после удаления категории
+    const { cache } = require('../controllers/questionController');
+    if (cache) {
+      cache.flushAll();
+    }
   } catch (error) {
     console.error('Ошибка при удалении категории:', error);
     res.status(500).json({ message: 'Ошибка сервера' });

@@ -2,8 +2,9 @@ import React, { useState, useEffect } from 'react'
 import QuestionCard from '../components/QuestionCard'
 import Notification from '../components/Notification'
 import CategoryList from '../components/CategoryList'
+import CategoryDropdown from '../components/CategoryDropdown'
 import api from '../services/api'
-import './Home.css'
+
 
 function Home() {
   const [scrollProgress, setScrollProgress] = useState(0);
@@ -14,6 +15,7 @@ function Home() {
   const [searchTerm, setSearchTerm] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
+  const [totalQuestions, setTotalQuestions] = useState(0)
   const [notification, setNotification] = useState(null)
   const [sortBy, setSortBy] = useState('createdAt')
   const [sortOrder, setSortOrder] = useState('DESC')
@@ -26,6 +28,20 @@ function Home() {
   // Загрузка категорий при монтировании компонента
   useEffect(() => {
     fetchCategories()
+  }, [])
+
+  // Эффект для прослушивания события обновления вопросов
+  useEffect(() => {
+    const handleRefreshQuestions = () => {
+      fetchQuestions()
+    }
+
+    window.addEventListener('refreshHomeQuestions', handleRefreshQuestions)
+
+    // Очистка слушателя при размонтировании компонента
+    return () => {
+      window.removeEventListener('refreshHomeQuestions', handleRefreshQuestions)
+    }
   }, [])
   
   // Эффект для отслеживания прокрутки
@@ -53,6 +69,10 @@ function Home() {
 
   const fetchQuestions = async () => {
     try {
+      // Если выбрана категория "Все категории" (null), то не передаем categoryId в параметрах
+      // В противном случае передаем выбранную категорию
+      const categoryId = selectedCategory ? selectedCategory.id : undefined;
+      
       const response = await api.get('/questions', {
         params: {
           search: searchTerm,
@@ -61,11 +81,12 @@ function Home() {
           sortBy: sortBy,
           order: sortOrder,
           type: activeFilter !== 'all' ? activeFilter : undefined,
-          categoryId: selectedCategory ? selectedCategory.id : undefined
+          categoryId: categoryId
         }
       })
       setQuestions(response.data.questions)
       setTotalPages(response.data.totalPages)
+      setTotalQuestions(response.data.totalQuestions)
       // Устанавливаем минимальное время отображения загрузчика в 1.5 секунды
       setTimeout(() => {
         setLoading(false);
@@ -132,73 +153,57 @@ function Home() {
           onChange={(e) => setSearchTerm(e.target.value)}
           className="search-input"
         />
-        <div className="filter-buttons">
-          <button
-            className={`filter-button ${sortBy === 'createdAt' ? 'active' : ''}`}
-            onClick={() => {
-              setSortBy('createdAt');
-              setSortOrder(sortOrder === 'DESC' ? 'ASC' : 'DESC');
-            }}
-            title="Сортировать по дате создания"
-          >
-            <i className="fas fa-calendar"></i>
-          </button>
-          <button
-            className={`filter-button ${sortBy === 'question' ? 'active' : ''}`}
-            onClick={() => {
-              setSortBy('question');
-              setSortOrder(sortOrder === 'DESC' ? 'ASC' : 'DESC');
-            }}
-            title="Сортировать по вопросу"
-          >
-            <i className="fas fa-question-circle"></i>
-          </button>
-          <button
-            className="filter-button"
-            onClick={() => {
-              setSortOrder(sortOrder === 'DESC' ? 'ASC' : 'DESC');
-            }}
-            title={sortOrder === 'DESC' ? 'Сортировать по убыванию' : 'Сортировать по возрастанию'}
-          >
-            {sortOrder === 'DESC' ? <i className="fas fa-arrow-down"></i> : <i className="fas fa-arrow-up"></i>}
-          </button>
+        {/* Выпадающий список категорий и фильтры */}
+        <div className="filters-row">
+          <div className="category-filter-container">
+            <CategoryDropdown
+              categories={categories}
+              selectedCategory={selectedCategory}
+              onCategoryChange={(category) => {
+                setSelectedCategory(category);
+                setCurrentPage(1); // Сброс на первую страницу при выборе категории
+              }}
+            />
+          </div>
+          <div className="filter-buttons">
+            <button
+              className={`filter-button ${sortBy === 'createdAt' ? 'active' : ''}`}
+              onClick={() => {
+                setSortBy('createdAt');
+                setSortOrder(sortOrder === 'DESC' ? 'ASC' : 'DESC');
+              }}
+              title="Сортировать по дате создания"
+            >
+              <i className="fas fa-calendar"></i>
+            </button>
+            <button
+              className={`filter-button ${sortBy === 'question' ? 'active' : ''}`}
+              onClick={() => {
+                setSortBy('question');
+                setSortOrder(sortOrder === 'DESC' ? 'ASC' : 'DESC');
+              }}
+              title="Сортировать по вопросу"
+            >
+              <i className="fas fa-question-circle"></i>
+            </button>
+            <button
+              className="filter-button"
+              onClick={() => {
+                setSortOrder(sortOrder === 'DESC' ? 'ASC' : 'DESC');
+              }}
+              title={sortOrder === 'DESC' ? 'Сортировать по убыванию' : 'Сортировать по возрастанию'}
+            >
+              {sortOrder === 'DESC' ? <i className="fas fa-arrow-down"></i> : <i className="fas fa-arrow-up"></i>}
+            </button>
+          </div>
+          <div className="questions-count" style={{ marginLeft: 'auto' }}>
+            Всего вопросов: {totalQuestions}
+          </div>
         </div>
       </div>
       
-      {/* Фильтры по типу вопроса */}
-      <div className="type-filters">
-        <button
-          className={`filter-button ${activeFilter === 'all' ? 'active' : ''}`}
-          onClick={() => setActiveFilter('all')}
-        >
-          Все вопросы
-        </button>
-        <button
-          className={`filter-button ${activeFilter === 'popular' ? 'active' : ''}`}
-          onClick={() => setActiveFilter('popular')}
-        >
-          Популярные
-        </button>
-        <button
-          className={`filter-button ${activeFilter === 'new' ? 'active' : ''}`}
-          onClick={() => setActiveFilter('new')}
-        >
-          Новые
-        </button>
-      </div>
       
       <div className="home-content">
-        <div className="categories-sidebar">
-          <CategoryList
-            categories={categories}
-            selectedCategory={selectedCategory}
-            onSelectCategory={(category) => {
-              setSelectedCategory(category);
-              setCurrentPage(1); // Сброс на первую страницу при выборе категории
-            }}
-          />
-        </div>
-        
         <div className="questions-content">
           {questions.length === 0 ? (
             <div className="no-questions-message">
@@ -260,3 +265,21 @@ function Home() {
 }
 
 export default Home
+
+// Функция для определения правильного окончания слова "вопрос"
+function getQuestionsCountWord(count) {
+  const lastDigit = count % 10;
+  const lastTwoDigits = count % 100;
+  
+  if (lastTwoDigits >= 11 && lastTwoDigits <= 19) {
+    return 'вопросов';
+  }
+  
+  switch (lastDigit) {
+    case 1: return 'вопрос';
+    case 2:
+    case 3:
+    case 4: return 'вопроса';
+    default: return 'вопросов';
+  }
+}

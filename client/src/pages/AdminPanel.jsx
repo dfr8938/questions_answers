@@ -2,23 +2,49 @@ import React, { useState, useEffect } from 'react'
 import QuestionForm from '../components/QuestionForm'
 import QuestionList from '../components/QuestionList'
 import CategoryForm from '../components/CategoryForm'
+import CategoryList from '../components/CategoryList'
 import Notification from '../components/Notification'
+import ConfirmDeleteCategoryModal from '../components/ConfirmDeleteCategoryModal'
+import ConfirmDeleteQuestionModal from '../components/ConfirmDeleteQuestionModal'
+import AddCategoryModal from '../components/AddCategoryModal'
+import AddQuestionModal from '../components/AddQuestionModal'
+import EditQuestionModal from '../components/EditQuestionModal'
+import EditCategoryModal from '../components/EditCategoryModal'
 import api from '../services/api'
-import './AdminPanel.css'
+
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
 
 function AdminPanel() {
   const [questions, setQuestions] = useState([])
     const [loading, setLoading] = useState(true)
     const [editingQuestion, setEditingQuestion] = useState(null)
+    const [isEditQuestionModalOpen, setIsEditQuestionModalOpen] = useState(false)
     const [editingCategory, setEditingCategory] = useState(null)
+    const [isEditCategoryModalOpen, setIsEditCategoryModalOpen] = useState(false)
     const [notification, setNotification] = useState(null)
     const [categoryStats, setCategoryStats] = useState([])
     const [totalQuestions, setTotalQuestions] = useState(0)
     const [currentPage, setCurrentPage] = useState(1)
     const [totalPages, setTotalPages] = useState(1)
-    const [limit] = useState(10) // Количество вопросов на странице
+    const [currentCategoryPage, setCurrentCategoryPage] = useState(1)
+    const [totalCategoryPages, setTotalCategoryPages] = useState(1)
+    const [limit] = useState(8) // Количество вопросов на странице
+    const [categoryLimit] = useState(8) // Количество категорий на странице
     const [availableCategories, setAvailableCategories] = useState([])
+    const [displayedCategories, setDisplayedCategories] = useState([])
+    const [deleteCategoryModal, setDeleteCategoryModal] = useState({
+      isOpen: false,
+      categoryId: null,
+      categoryName: '',
+      questionCount: 0
+    })
+    const [deleteQuestionModal, setDeleteQuestionModal] = useState({
+      isOpen: false,
+      questionId: null,
+      questionText: ''
+    })
+    const [isAddCategoryModalOpen, setIsAddCategoryModalOpen] = useState(false)
+    const [isAddQuestionModalOpen, setIsAddQuestionModalOpen] = useState(false)
 
   useEffect(() => {
     fetchQuestions()
@@ -68,10 +94,23 @@ function AdminPanel() {
         const response = await api.get('/categories')
         const categories = response.data || []
         setAvailableCategories(categories)
+        
+        // Обновляем пагинацию категорий
+        setTotalCategoryPages(Math.ceil(categories.length / categoryLimit))
+        const startIndex = (currentCategoryPage - 1) * categoryLimit
+        const endIndex = startIndex + categoryLimit
+        setDisplayedCategories(categories.slice(startIndex, endIndex))
       } catch (error) {
         console.error('Ошибка при загрузке категорий:', error)
       }
     }
+    
+    // Эффект для обновления отображаемых категорий при изменении страницы или категорий
+    useEffect(() => {
+      const startIndex = (currentCategoryPage - 1) * categoryLimit
+      const endIndex = startIndex + categoryLimit
+      setDisplayedCategories(availableCategories.slice(startIndex, endIndex))
+    }, [currentCategoryPage, availableCategories, categoryLimit])
     
     const handleCreateCategory = async (categoryData) => {
           try {
@@ -86,8 +125,23 @@ function AdminPanel() {
           }
         }
     
+    const handleAddCategory = async (categoryData) => {
+      try {
+        const response = await api.post('/categories', categoryData)
+        setAvailableCategories([...availableCategories, response.data])
+        setIsAddCategoryModalOpen(false)
+        showNotification('Категория успешно создана!', 'success')
+        // Обновляем пагинацию после добавления категории
+        setTotalCategoryPages(Math.ceil((availableCategories.length + 1) / categoryLimit))
+      } catch (error) {
+        console.error('Ошибка при создании категории:', error)
+        showNotification('Ошибка при создании категории: ' + error.message, 'error')
+      }
+    }
+    
     const handleEditCategory = (category) => {
       setEditingCategory(category)
+      setIsEditCategoryModalOpen(true)
     }
     
     const handleUpdateCategory = async (id, categoryData) => {
@@ -104,15 +158,77 @@ function AdminPanel() {
       }
     }
     
-    const handleDeleteCategory = async (id) => {
+    const handleDeleteCategoryClick = async (category) => {
       try {
-        await api.delete(`/categories/${id}`)
-        setAvailableCategories(availableCategories.filter(cat => cat.id !== id))
-        showNotification('Категория успешно удалена!', 'success')
+        // Получаем количество вопросов в категории
+        const response = await api.get(`/categories/${category.id}/questions`)
+        const questionCount = response.data.length || 0
+        
+        // Открываем модальное окно подтверждения
+        setDeleteCategoryModal({
+          isOpen: true,
+          categoryId: category.id,
+          categoryName: category.name,
+          questionCount: questionCount
+        })
+      } catch (error) {
+        console.error('Ошибка при получении информации о категории:', error)
+        showNotification('Ошибка при получении информации о категории: ' + error.message, 'error')
+      }
+    }
+    
+    const handleDeleteCategoryConfirm = async () => {
+      const { categoryId } = deleteCategoryModal
+      
+      try {
+        // Сначала удаляем все вопросы из категории
+        await api.delete(`/categories/${categoryId}/questions`)
+        
+        // Затем удаляем саму категорию
+        await api.delete(`/categories/${categoryId}`)
+        
+        // Обновляем список категорий
+        setAvailableCategories(availableCategories.filter(cat => cat.id !== categoryId))
+        
+        // Обновляем список вопросов, чтобы удалить вопросы без категории
+        await fetchQuestions()
+        refreshHomeQuestions() // Обновляем вопросы на главной странице
+        
+        // Закрываем модальное окно
+        setDeleteCategoryModal({
+          isOpen: false,
+          categoryId: null,
+          categoryName: '',
+          questionCount: 0
+        })
+        
+        showNotification('Категория и все вопросы в ней успешно удалены!', 'success')
+        
+        // Обновляем пагинацию после удаления категории
+        const newCategoryCount = availableCategories.length - 1
+        setTotalCategoryPages(Math.ceil(newCategoryCount / categoryLimit))
+        if (currentCategoryPage > Math.ceil(newCategoryCount / categoryLimit)) {
+          setCurrentCategoryPage(Math.max(1, Math.ceil(newCategoryCount / categoryLimit)))
+        }
       } catch (error) {
         console.error('Ошибка при удалении категории:', error)
         showNotification('Ошибка при удалении категории: ' + error.message, 'error')
       }
+    }
+  
+    // Функция для обновления списка вопросов на главной странице
+    const refreshHomeQuestions = () => {
+      // Отправляем пользовательское событие, которое может прослушивать Home компонент
+      window.dispatchEvent(new CustomEvent('refreshHomeQuestions'));
+    }
+    
+    const handleDeleteCategoryCancel = () => {
+      setDeleteCategoryModal({
+        isOpen: false,
+        categoryId: null,
+        categoryName: '',
+        questionCount: 0
+      })
     }
 
   const fetchQuestions = async () => {
@@ -169,21 +285,48 @@ function AdminPanel() {
     }
   }
 
-  const handleDelete = async (id) => {
+  const handleDelete = async (id, questionText) => {
+    // Открываем модальное окно подтверждения удаления
+    setDeleteQuestionModal({
+      isOpen: true,
+      questionId: id,
+      questionText: questionText
+    });
+  }
+  
+  const handleDeleteQuestionConfirm = async () => {
+    const { questionId } = deleteQuestionModal;
+    
     try {
-      await api.delete(`/questions/${id}`)
-      setQuestions(questions.filter(q => q.id !== id))
+      await api.delete(`/questions/${questionId}`)
+      setQuestions(questions.filter(q => q.id !== questionId))
       // Обновляем статистику после удаления вопроса
       await fetchStats()
       showNotification('Вопрос успешно удален!', 'success')
     } catch (error) {
       console.error('Ошибка при удалении вопроса:', error)
       showNotification('Ошибка при удалении вопроса: ' + error.message, 'error')
+    } finally {
+      // Закрываем модальное окно
+      setDeleteQuestionModal({
+        isOpen: false,
+        questionId: null,
+        questionText: ''
+      });
     }
+  }
+  
+  const handleDeleteQuestionCancel = () => {
+    setDeleteQuestionModal({
+      isOpen: false,
+      questionId: null,
+      questionText: ''
+    });
   }
 
   const handleEdit = (question) => {
     setEditingQuestion(question)
+    setIsEditQuestionModalOpen(true)
   }
 
   const showNotification = (message, type) => {
@@ -217,91 +360,88 @@ function AdminPanel() {
       )}
       <h2>Админ-панель</h2>
       
+      {/* Блок с кнопками действий */}
+      <div className="admin-actions">
+        <button
+          className="btn btn-primary"
+          onClick={() => setIsAddQuestionModalOpen(true)}
+        >
+          Добавить новый вопрос
+        </button>
+        <button
+          className="btn btn-primary"
+          onClick={() => setIsAddCategoryModalOpen(true)}
+        >
+          Добавить новую категорию
+        </button>
+      </div>
       
       {/* Управление категориями */}
             <div className="category-management">
-                    {!(editingCategory !== null && editingCategory.show) && (
-                      <button
-                        className="btn btn-primary add-category-btn"
-                        onClick={() => setEditingCategory({ show: true })}
-                      >
-                        Добавить новую категорию
-                      </button>
-                    )}
-                    {(editingCategory !== null && editingCategory.show) && (
-                      <div className="category-form-container">
-                        <CategoryForm
-                          onSubmit={handleCreateCategory}
-                          onCancel={() => setEditingCategory(null)}
-                          initialData={null}
-                        />
+                    {/* Удалена кнопка "Добавить новую категорию" из блока категорий */}
+                    {!(editingCategory !== null && editingCategory.show) && null}
+                    {/* Убрана inline форма редактирования категории, теперь используется модальное окно */}
+                    {(editingCategory !== null && editingCategory.show) && null}
+                    {editingCategory !== null && editingCategory.id && null}
+                    <div className="category-list-section">
+                      <h4>Список категорий</h4>
+                      <CategoryList
+                        categories={displayedCategories}
+                        onEdit={handleEditCategory}
+                        onDelete={handleDeleteCategoryClick}
+                      />
+                      {/* Пагинация категорий */}
+                      <div className="category-pagination">
+                        <button
+                          onClick={() => setCurrentCategoryPage(prev => Math.max(prev - 1, 1))}
+                          disabled={currentCategoryPage === 1}
+                          className="pagination-button"
+                          title="Предыдущая страница"
+                        >
+                          <i className="fas fa-chevron-left"></i>
+                        </button>
+                        
+                        {totalCategoryPages > 1 && (
+                          <div className="page-input-container">
+                            <label>Страница:</label>
+                            <input
+                              type="number"
+                              min="1"
+                              max={totalCategoryPages}
+                              value={currentCategoryPage}
+                              onChange={(e) => {
+                                const page = parseInt(e.target.value);
+                                if (page >= 1 && page <= totalCategoryPages) {
+                                  setCurrentCategoryPage(page);
+                                }
+                              }}
+                              className="page-input"
+                            />
+                            <span>из {totalCategoryPages}</span>
+                          </div>
+                        )}
+                        
+                        <button
+                          onClick={() => setCurrentCategoryPage(prev => Math.min(prev + 1, totalCategoryPages))}
+                          disabled={currentCategoryPage === totalCategoryPages}
+                          className="pagination-button"
+                          title="Следующая страница"
+                        >
+                          <i className="fas fa-chevron-right"></i>
+                        </button>
                       </div>
-                    )}
-                    {editingCategory !== null && editingCategory.id && (
-                      <div className="category-form-container">
-                        <CategoryForm
-                          onSubmit={(data) => handleUpdateCategory(editingCategory.id, data)}
-                          onCancel={() => setEditingCategory(null)}
-                          initialData={editingCategory}
-                        />
-                      </div>
-                    )}
-                    <div className="category-list">
-                      <h4>Существующие категории:</h4>
-                      {availableCategories.length > 0 ? (
-                        <div className="category-grid">
-                          {availableCategories.map((category) => (
-                            <div key={category.id} className="category-card">
-                              <div className="category-card-header">
-                                <h5 className="category-name">{category.name}</h5>
-                                <div className="category-actions">
-                                  <button
-                                    className="btn btn-small btn-secondary"
-                                    onClick={() => handleEditCategory(category)}
-                                    title="Редактировать категорию"
-                                  >
-                                    <i className="fas fa-edit"></i>
-                                  </button>
-                                  <button
-                                    className="btn btn-small btn-danger"
-                                    onClick={() => handleDeleteCategory(category.id)}
-                                    title="Удалить категорию"
-                                  >
-                                    <i className="fas fa-trash"></i>
-                                  </button>
-                                </div>
-                              </div>
-                              {category.description && (
-                                <p className="category-description">{category.description}</p>
-                              )}
-                              <div className="category-meta">
-                                <span>ID: {category.id}</span>
-                                <span>Создана: {new Date(category.createdAt).toLocaleDateString('ru-RU')}</span>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <p className="no-categories">Категории не найдены. Добавьте новую категорию.</p>
-                      )}
                     </div>
             </div>
       
       <div className="admin-content">
-        <div className="form-section">
-          <h3>{editingQuestion ? 'Редактировать вопрос' : 'Добавить новый вопрос'}</h3>
-          <QuestionForm
-            onSubmit={editingQuestion ? handleUpdate : handleCreate}
-            initialData={editingQuestion}
-            onCancel={() => setEditingQuestion(null)}
-          />
-        </div>
+        {/* Убрана inline форма редактирования, теперь используется модальное окно */}
+        {editingQuestion && null}
         <div className="list-section">
           <h3>Список вопросов</h3>
           <QuestionList
             questions={questions}
             onEdit={handleEdit}
-            onDelete={handleDelete}
+            onDelete={(id, questionText) => handleDelete(id, questionText)}
           />
           {/* Пагинация */}
           <div className="pagination">
@@ -345,6 +485,55 @@ function AdminPanel() {
           </div>
         </div>
       </div>
+      
+      {/* Модальное окно подтверждения удаления категории */}
+      <ConfirmDeleteCategoryModal
+        isOpen={deleteCategoryModal.isOpen}
+        onClose={handleDeleteCategoryCancel}
+        onConfirm={handleDeleteCategoryConfirm}
+        categoryName={deleteCategoryModal.categoryName}
+        questionCount={deleteCategoryModal.questionCount}
+      />
+      
+      {/* Модальное окно добавления категории */}
+      <AddCategoryModal
+        isOpen={isAddCategoryModalOpen}
+        onClose={() => setIsAddCategoryModalOpen(false)}
+        onSubmit={handleAddCategory}
+      />
+      
+      {/* Модальное окно добавления вопроса */}
+      <AddQuestionModal
+        isOpen={isAddQuestionModalOpen}
+        onClose={() => setIsAddQuestionModalOpen(false)}
+        onSubmit={handleCreate}
+        availableCategories={availableCategories}
+      />
+      
+      {/* Модальное окно редактирования вопроса */}
+      <EditQuestionModal
+        isOpen={isEditQuestionModalOpen}
+        onClose={() => setIsEditQuestionModalOpen(false)}
+        onSubmit={(id, data) => handleUpdate(id, data)}
+        question={editingQuestion}
+        availableCategories={availableCategories}
+      />
+      
+      {/* Модальное окно подтверждения удаления вопроса */}
+      <ConfirmDeleteQuestionModal
+        isOpen={deleteQuestionModal.isOpen}
+        onClose={handleDeleteQuestionCancel}
+        onConfirm={handleDeleteQuestionConfirm}
+        questionText={deleteQuestionModal.questionText}
+      />
+      
+      {/* Модальное окно редактирования категории */}
+      <EditCategoryModal
+        isOpen={isEditCategoryModalOpen}
+        onClose={() => setIsEditCategoryModalOpen(false)}
+        onSubmit={(id, data) => handleUpdateCategory(id, data)}
+        category={editingCategory}
+      />
     </div>
   )
 }

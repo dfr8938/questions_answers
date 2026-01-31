@@ -1,7 +1,7 @@
 import React from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import api from '../services/api'
-import './Header.css'
+
 
 function Header() {
   const navigate = useNavigate()
@@ -24,26 +24,37 @@ function Header() {
       <div className="header-content">
         <div className="logo">
           <i className="fas fa-heartbeat"></i>
+          MedQA
         </div>
         <nav className="nav-links">
-          <Link to="/" className="nav-link">Главная</Link>
+          <Link to="/" className="nav-link">
+            <i className="fas fa-home"></i> Главная
+          </Link>
           {user ? (
             <>
               {user.role === 'admin' && (
-                <Link to="/admin" className="nav-link">Админ-панель</Link>
+                <Link to="/admin" className="nav-link">
+                  <i className="fas fa-user-shield"></i> Админ-панель
+                </Link>
               )}
               {user.role === 'superadmin' && (
                 <>
-                  <Link to="/admin" className="nav-link">Админ-панель</Link>
-                  <Link to="/superadmin" className="nav-link">Суперадмин-панель</Link>
+                  <Link to="/admin" className="nav-link">
+                    <i className="fas fa-user-shield"></i> Админ-панель
+                  </Link>
+                  <Link to="/superadmin" className="nav-link">
+                    <i className="fas fa-user-cog"></i> Суперадмин-панель
+                  </Link>
                 </>
               )}
               <button onClick={handleLogout} className="nav-link logout-btn">
-                Выйти ({user.username})
+                <i className="fas fa-sign-out-alt"></i> Выйти
               </button>
             </>
           ) : (
-            <Link to="/login" className="nav-link">Вход</Link>
+            <Link to="/login" className="nav-link">
+              <i className="fas fa-sign-in-alt"></i> Вход
+            </Link>
           )}
         </nav>
       </div>

@@ -1,13 +1,25 @@
 import React, { useState } from 'react'
-import './CategoryForm.css'
 
+/**
+ * Компонент формы для создания и редактирования категорий
+ * @param {Function} onSubmit - Функция для отправки данных формы
+ * @param {Function} onCancel - Функция для отмены редактирования
+ * @param {Object} initialData - Начальные данные для редактирования категории
+ */
 function CategoryForm({ onSubmit, onCancel, initialData }) {
+  // Состояние для хранения данных формы
   const [formData, setFormData] = useState({
     name: initialData?.name || '',
     description: initialData?.description || ''
   })
+  
+  // Состояние для хранения ошибок валидации
   const [errors, setErrors] = useState({})
 
+  /**
+   * Обработчик изменения полей формы
+   * @param {Event} e - Событие изменения поля
+   */
   const handleChange = (e) => {
     const { name, value } = e.target
     setFormData(prev => ({
@@ -24,6 +36,10 @@ function CategoryForm({ onSubmit, onCancel, initialData }) {
     }
   }
 
+  /**
+   * Валидация формы перед отправкой
+   * @returns {Object} Объект с ошибками валидации
+   */
   const validate = () => {
     const newErrors = {}
     
@@ -34,6 +50,10 @@ function CategoryForm({ onSubmit, onCancel, initialData }) {
     return newErrors
   }
 
+  /**
+   * Обработчик отправки формы
+   * @param {Event} e - Событие отправки формы
+   */
   const handleSubmit = (e) => {
       e.preventDefault()
       const newErrors = validate()
@@ -56,7 +76,6 @@ function CategoryForm({ onSubmit, onCancel, initialData }) {
 
   return (
     <div className="category-form">
-      <h3>{initialData ? 'Редактировать категорию' : 'Добавить новую категорию'}</h3>
       <form onSubmit={handleSubmit}>
         <div className="form-group">
           <label htmlFor="name">Название категории:</label>

@@ -1,19 +1,20 @@
 import React, { useState, useEffect } from 'react'
 import UserManagement from '../components/UserManagement'
 import Notification from '../components/Notification'
+import AddAdminModal from '../components/AddAdminModal'
+import EditAdminModal from '../components/EditAdminModal'
+import ConfirmDeleteModal from '../components/ConfirmDeleteModal'
 import api from '../services/api'
-import './SuperAdminPanel.css'
+
 
 function SuperAdminPanel() {
   const [users, setUsers] = useState([])
   const [loading, setLoading] = useState(true)
-  const [showAddAdminForm, setShowAddAdminForm] = useState(false)
-  const [newAdmin, setNewAdmin] = useState({
-    username: '',
-    email: '',
-    password: ''
-  })
-  const [errors, setErrors] = useState({})
+  const [isAddAdminModalOpen, setIsAddAdminModalOpen] = useState(false)
+  const [isEditAdminModalOpen, setIsEditAdminModalOpen] = useState(false)
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
+  const [userToDelete, setUserToDelete] = useState(null)
+  const [editingUser, setEditingUser] = useState(null)
   const [notification, setNotification] = useState(null)
 
   useEffect(() => {
@@ -48,6 +49,50 @@ function SuperAdminPanel() {
     }
   }
 
+  const handleEditClick = (user) => {
+    setEditingUser(user)
+    setIsEditAdminModalOpen(true)
+  }
+
+  const handleDeleteClick = (user) => {
+    console.log('Получен объект пользователя для удаления:', user);
+    console.log('Тип объекта:', typeof user);
+    if (typeof user === 'number') {
+      console.error('В onDelete передан ID вместо объекта пользователя:', user);
+      // Найдем пользователя по ID в списке пользователей
+      const userObj = users.find(u => u.id === user);
+      if (userObj) {
+        console.log('Найден пользователь по ID:', userObj);
+        setUserToDelete(userObj);
+      } else {
+        console.error('Пользователь с ID', user, 'не найден в списке');
+        showNotification('Ошибка: не удалось найти пользователя для удаления', 'error');
+        return;
+      }
+    } else {
+      if (!user || !user.id) {
+        console.error('Пользователь не содержит ID:', user);
+        showNotification('Ошибка: не удалось определить пользователя для удаления', 'error');
+        return;
+      }
+      setUserToDelete(user);
+    }
+    setIsDeleteModalOpen(true);
+  }
+
+  const handleConfirmDelete = async () => {
+    console.log('Подтверждение удаления пользователя:', userToDelete);
+    if (userToDelete && userToDelete.id) {
+      await handleUserDelete(userToDelete.id);
+    } else {
+      console.error('Попытка удаления пользователя без ID:', userToDelete);
+      showNotification('Ошибка: не удалось определить пользователя для удаления', 'error');
+      // Закрываем модальное окно в случае ошибки
+      setIsDeleteModalOpen(false);
+      setUserToDelete(null);
+    }
+  }
+
   const handleUserDelete = async (userId) => {
     try {
       await api.delete(`/users/${userId}`)
@@ -56,57 +101,25 @@ function SuperAdminPanel() {
     } catch (error) {
       console.error('Ошибка при удалении пользователя:', error)
       showNotification('Ошибка при удалении пользователя: ' + error.message, 'error')
+    } finally {
+      // Закрываем модальное окно в любом случае
+      setIsDeleteModalOpen(false);
+      setUserToDelete(null);
     }
   }
 
-  const validateForm = () => {
-    const newErrors = {}
-    
-    if (!newAdmin.username.trim()) {
-      newErrors.username = 'Имя пользователя обязательно'
-    } else if (newAdmin.username.length < 3) {
-      newErrors.username = 'Имя пользователя должно содержать минимум 3 символа'
-    }
-    
-    if (!newAdmin.email.trim()) {
-      newErrors.email = 'Email обязателен'
-    } else if (!/\S+@\S+\.\S+/.test(newAdmin.email)) {
-      newErrors.email = 'Некорректный формат email'
-    }
-    
-    if (!newAdmin.password) {
-      newErrors.password = 'Пароль обязателен'
-    } else if (newAdmin.password.length < 6) {
-      newErrors.password = 'Пароль должен содержать минимум 6 символов'
-    }
-    
-    return newErrors
-  }
-  
-  const handleAddAdmin = async (e) => {
-    e.preventDefault()
-    
-    // Проверка авторизации
-    const token = localStorage.getItem('token');
-    if (!token) {
-      setErrors({ form: 'Необходимо авторизоваться для выполнения этого действия' });
-      return;
-    }
-    
-    // Валидация формы
-    const newErrors = validateForm()
-    if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors)
-      return
-    }
-    
+  const handleAddAdmin = async (adminData) => {
     try {
-      const response = await api.post('/users/admin', newAdmin)
+      // Проверка авторизации
+      const token = localStorage.getItem('token');
+      if (!token) {
+        showNotification('Необходимо авторизоваться для выполнения этого действия', 'error');
+        return;
+      }
+      
+      const response = await api.post('/users/admin', adminData)
       setUsers([response.data, ...users])
-      setNewAdmin({ username: '', email: '', password: '' })
-      setShowAddAdminForm(false)
-      // Очищаем ошибки
-      setErrors({})
+      setIsAddAdminModalOpen(false)
       showNotification('Админ успешно создан!', 'success')
     } catch (error) {
       console.error('Ошибка при создании админа:', error)
@@ -114,18 +127,30 @@ function SuperAdminPanel() {
     }
   }
 
-  const handleInputChange = (e) => {
-    setNewAdmin({
-      ...newAdmin,
-      [e.target.name]: e.target.value
-    })
-    
-    // Очищаем ошибку при изменении поля
-    if (errors[e.target.name]) {
-      setErrors({
-        ...errors,
-        [e.target.name]: ''
-      })
+  const handleEditAdmin = async (userId, userData) => {
+    try {
+      // Проверка авторизации
+      const token = localStorage.getItem('token');
+      if (!token) {
+        showNotification('Необходимо авторизоваться для выполнения этого действия', 'error');
+        return;
+      }
+      
+      const response = await api.put(`/users/${userId}`, userData)
+      const updatedUser = response.data
+      
+      // Обновляем пользователя в списке
+      const updatedUsers = users.map(user =>
+        user.id === userId ? updatedUser : user
+      )
+      
+      setUsers(updatedUsers)
+      setIsEditAdminModalOpen(false)
+      setEditingUser(null)
+      showNotification('Админ успешно обновлен!', 'success')
+    } catch (error) {
+      console.error('Ошибка при обновлении админа:', error)
+      showNotification('Ошибка при обновлении админа: ' + error.message, 'error')
     }
   }
 
@@ -154,108 +179,63 @@ function SuperAdminPanel() {
   }
 
   return (
-    <div className="panel">
-      {notification && (
-        <Notification
-          message={notification.message}
-          type={notification.type}
-          onClose={closeNotification}
-        />
-      )}
-      <h2>Суперадмин-панель</h2>
-      <div className="super-admin-content">
-        <div className="admin-actions">
-          <button 
-            className="btn btn-primary"
-            onClick={() => setShowAddAdminForm(!showAddAdminForm)}
-          >
-            {showAddAdminForm ? 'Отмена' : 'Добавить нового админа'}
-          </button>
+    <React.Fragment>
+      <div className="panel">
+        {notification && (
+          <Notification
+            message={notification.message}
+            type={notification.type}
+            onClose={closeNotification}
+          />
+        )}
+        <h2>Суперадмин-панель</h2>
+        <div className="super-admin-content">
+          <div className="admin-actions">
+            <button
+              className="btn btn-primary"
+              onClick={() => setIsAddAdminModalOpen(true)}
+            >
+              Добавить нового админа
+            </button>
+          </div>
           
-          {showAddAdminForm && (
-            <div className="add-admin-form">
-              <h3>Создание нового админа</h3>
-              <form onSubmit={handleAddAdmin}>
-                <div className="form-group">
-                  <label htmlFor="username">Имя пользователя:</label>
-                  <input
-                    type="text"
-                    id="username"
-                    name="username"
-                    value={newAdmin.username}
-                    onChange={handleInputChange}
-                    required
-                    placeholder="Введите имя пользователя (минимум 3 символа)"
-                    autoComplete="off"
-                  />
-                  {errors.username && <span className="error">{errors.username}</span>}
-                </div>
-                <div className="form-group">
-                  <label htmlFor="email">Email:</label>
-                  <input
-                    type="email"
-                    id="email"
-                    name="email"
-                    value={newAdmin.email}
-                    onChange={handleInputChange}
-                    required
-                    placeholder="Введите email адрес"
-                    autoComplete="off"
-                  />
-                  {errors.email && <span className="error">{errors.email}</span>}
-                </div>
-                <div className="form-group">
-                  <label htmlFor="password">Пароль:</label>
-                  <input
-                    type="password"
-                    id="password"
-                    name="password"
-                    value={newAdmin.password}
-                    onChange={handleInputChange}
-                    required
-                    minLength="6"
-                    placeholder="Введите пароль (минимум 6 символов)"
-                    autoComplete="new-password"
-                  />
-                  <div className="password-legend">
-                    <small>Пароль должен содержать минимум 6 символов</small>
-                  </div>
-                  {errors.password && <span className="error">{errors.password}</span>}
-                </div>
-                
-                {errors.form && <div className="error form-error">{errors.form}</div>}
-                
-                <button type="submit" className="btn btn-success">
-                  Создать админа
-                </button>
-                <button
-                  type="button"
-                  className="btn btn-secondary"
-                  onClick={() => {
-                    setNewAdmin({
-      username: '',
-      email: '',
-      password: ''
-    });
-    setErrors({});
-                  }}
-                >
-                  Очистить
-                </button>
-              </form>
-            </div>
-          )}
+          <UserManagement
+            users={users}
+            onRoleChange={handleRoleChange}
+            onDelete={handleDeleteClick}
+            onUpdateUsers={handleUpdateUsers}
+            onEdit={handleEditClick}
+          />
+          
         </div>
-        
-        <UserManagement 
-          users={users}
-          onRoleChange={handleRoleChange}
-          onDelete={handleUserDelete}
-          onUpdateUsers={handleUpdateUsers}
-        />
-        
       </div>
-    </div>
+      
+      <AddAdminModal
+        isOpen={isAddAdminModalOpen}
+        onClose={() => setIsAddAdminModalOpen(false)}
+        onAddAdmin={handleAddAdmin}
+      />
+      
+      <EditAdminModal
+        isOpen={isEditAdminModalOpen}
+        onClose={() => {
+          setIsEditAdminModalOpen(false);
+          setEditingUser(null);
+        }}
+        onEditAdmin={handleEditAdmin}
+        user={editingUser}
+      />
+      
+      <ConfirmDeleteModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => {
+          setIsDeleteModalOpen(false);
+          setUserToDelete(null);
+        }}
+        onConfirm={handleConfirmDelete}
+        username={userToDelete?.username}
+      />
+    </React.Fragment>
   )
 }
 

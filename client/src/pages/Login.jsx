@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Notification from '../components/Notification'
 import api from '../services/api'
-import './Login.css'
+
 
 function Login() {
   const [credentials, setCredentials] = useState({
@@ -111,7 +111,9 @@ function Login() {
         {error && <div className="error-message">{error}</div>}
         <form onSubmit={handleSubmit} className="login-form">
           <div className="form-group">
-            <label htmlFor="email">Email:</label>
+            <label htmlFor="email">
+              <i className="fas fa-envelope"></i> Email:
+            </label>
             <input
               type="email"
               id="email"
@@ -120,10 +122,13 @@ function Login() {
               onChange={handleChange}
               required
               autoComplete="off"
+              className="input"
             />
           </div>
           <div className="form-group">
-            <label htmlFor="password">Пароль:</label>
+            <label htmlFor="password">
+              <i className="fas fa-lock"></i> Пароль:
+            </label>
             <div className="password-input-container">
               <input
                 type={showPassword ? "text" : "password"}
@@ -133,6 +138,7 @@ function Login() {
                 onChange={handleChange}
                 required
                 autoComplete="current-password"
+                className="input"
               />
               <button
                 type="button"
@@ -154,8 +160,8 @@ function Login() {
               </button>
             </div>
           </div>
-          <button type="submit" className="btn" disabled={loading}>
-            {loading ? 'Вход...' : 'Войти'}
+          <button type="submit" className="btn btn-login" disabled={loading}>
+            {loading ? 'Вход...' : <><i className="fas fa-sign-in-alt"></i> Войти</>}
           </button>
         </form>
       </div>
